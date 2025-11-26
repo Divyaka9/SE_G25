@@ -137,12 +137,25 @@ const claimOrder = async (req, res) => {
         message: "Order not available for claim",
       });
 
-    // preserve who originally created it
-    if (!order.originalUserId) order.originalUserId = order.userId;
+    // If this is the first time, preserve who originally created it
+    if (!order.originalUserId) {
+      order.originalUserId = order.userId;
+      // original user name is whatever name was on the address at creation
+      order.originalUserName =
+        order.address?.name || order.address?.fullName || "";
+    }
+
+    // Look up claimer's name for admin display
+    const claimer = await userModel.findById(claimerId).select("name");
+    const claimerName =
+      claimer?.name ||
+      order.address?.name || // fallback if you later choose to overwrite address
+      "";
 
     // transfer ownership
     order.userId = claimerId;
     order.claimedBy = claimerId;
+    order.claimedByName = claimerName;
     order.claimedAt = new Date();
     order.status = STATUS.PROCESSING;
 
@@ -159,6 +172,7 @@ const claimOrder = async (req, res) => {
   }
 };
 
+
 /**
  * Places a new order with Stripe payment
  * Creates order record and clears user's cart
@@ -174,14 +188,17 @@ const claimOrder = async (req, res) => {
  */
 const placeOrder = async (req, res) => {
   try {
+    const { userId, items, amount, address } = req.body;
     const newOrder = new orderModel({
-      userId: req.body.userId,
-      items: req.body.items,
-      amount: req.body.amount,
-      address: req.body.address,
+      userId,
+      items,
+      amount,
+      address,
+      originalUserId: userId,
+      originalUserName: address?.name || address?.fullName || "", // depends on your address shape
     });
     await newOrder.save();
-    await userModel.findByIdAndUpdate(req.body.userId, { cartData: {} });
+    await userModel.findByIdAndUpdate(userId, { cartData: {} });
 
     res.json({
       success: true,
@@ -192,6 +209,7 @@ const placeOrder = async (req, res) => {
     res.json({ success: false, message: error });
   }
 };
+
 
 /**
  * Places a new order with Cash on Delivery (COD) payment
@@ -207,15 +225,18 @@ const placeOrder = async (req, res) => {
  */
 const placeOrderCod = async (req, res) => {
   try {
+    const { userId, items, amount, address } = req.body;
     const newOrder = new orderModel({
-      userId: req.body.userId,
-      items: req.body.items,
-      amount: req.body.amount,
-      address: req.body.address,
+      userId,
+      items,
+      amount,
+      address,
       payment: true,
+      originalUserId: userId,
+      originalUserName: address?.name || address?.fullName || "",
     });
     await newOrder.save();
-    await userModel.findByIdAndUpdate(req.body.userId, { cartData: {} });
+    await userModel.findByIdAndUpdate(userId, { cartData: {} });
     res.json({ success: true, message: "Order Placed" });
   } catch (error) {
     console.error(error);

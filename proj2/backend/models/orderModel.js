@@ -15,6 +15,12 @@ const orderSchema = new mongoose.Schema({
   amount: { type: Number, required: true },
   address: { type: Object, required: true },
 
+  originalUserId: { type: String },       
+  originalUserName: { type: String },     
+  claimedBy: { type: String },            
+  claimedByName: { type: String },      
+  claimedAt: { type: Date },   
+
   // Updated with enum for stricter validation
   status: {
     type: String,
@@ -25,7 +31,7 @@ const orderSchema = new mongoose.Schema({
   date: { type: Date, default: Date.now },
   payment: { type: Boolean, default: false },
 
-  // ⭐ NEW: rating / feedback fields
+
   rating: {
     type: Number,
     min: 1,
