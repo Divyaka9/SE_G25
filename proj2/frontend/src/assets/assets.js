@@ -10,7 +10,7 @@ import menu_5 from "./sq_menu_5.png";
 import menu_6 from "./sq_menu_6.png";
 import menu_7 from "./sq_menu_7.png";
 import menu_8 from "./sq_menu_8.png";
-
+import nonveg from "./nonveg.png";
 import food_1 from "./food_1.png";
 import food_2 from "./food_2.png";
 import food_3 from "./food_3.png";
@@ -119,6 +119,7 @@ export const menu_list = [
     menu_name: "Noodles",
     menu_image: menu_8,
   },
+  { menu_name: "Non Veg",  menu_image: nonveg },
 ];
 
 export const food_list = [
