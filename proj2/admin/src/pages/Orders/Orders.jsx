@@ -74,10 +74,7 @@ const Order = () => {
 
   /**
    * Handles order status updates
-   * Validates status transitions and updates order via API
-   * @param {Object} event - React change event from select element
-   * @param {string} orderId - MongoDB _id of the order to update
-   * @returns {Promise<void>}
+   * Validates status transitions according to backend rules
    */
   const statusHandler = async (event, orderId) => {
     const nextStatus = event.target.value;
@@ -132,66 +129,93 @@ const Order = () => {
       )}
 
       <div className="order-list">
-        {orders.map((order) => (
-          <div key={order._id} className="order-item">
-            <img src={assets.parcel_icon} alt="" />
-            <div>
-              <p className="order-item-food">
-                {order.items.map((item, idx) =>
-                  idx === order.items.length - 1
-                    ? `${item.name} x ${item.quantity}`
-                    : `${item.name} x ${item.quantity}, `
-                )}
-              </p>
-              <p className="order-item-name">
-                {order.address.firstName + " " + order.address.lastName}
-              </p>
-              <div className="order-item-address">
-                <p>{order.address.street + ","}</p>
-                <p>
-                  {order.address.city +
-                    ", " +
-                    order.address.state +
-                    ", " +
-                    order.address.country +
-                    ", " +
-                    order.address.zipcode}
+        {orders.map((order) => {
+          const addr = order.address || {};
+
+          // Name for original orderer
+          const orderedByName =
+            order.originalUserName ||
+            [addr.firstName, addr.lastName].filter(Boolean).join(" ") ||
+            "Unknown";
+
+          // Name for claimer (if any)
+          let claimedByLabel = "Not claimed";
+          if (order.claimedBy) {
+            claimedByLabel =
+              order.claimedByName ||
+              `User ID: ${order.claimedBy}` ||
+              "Claimed user";
+          }
+
+          return (
+            <div key={order._id} className="order-item">
+              <img src={assets.parcel_icon} alt="" />
+              <div>
+                <p className="order-item-food">
+                  {order.items.map((item, idx) =>
+                    idx === order.items.length - 1
+                      ? `${item.name} x ${item.quantity}`
+                      : `${item.name} x ${item.quantity}, `
+                  )}
                 </p>
-              </div>
-              <p className="order-item-phone">{order.address.phone}</p>
 
-              {order.status === "Cancelled" && (
-                <div className="shelter-assigned">
-                  Status: <b>Cancelled</b>
+                {/* Who ordered & who claimed */}
+                <p className="order-item-name">
+                  <strong>Ordered by:</strong> {orderedByName}
+                </p>
+                <p className="order-item-name">
+                  <strong>Claimed by:</strong> {claimedByLabel}
+                </p>
+
+                <div className="order-item-address">
+                  <p>
+                    {addr.street
+                      ? addr.street + ","
+                      : ""}
+                  </p>
+                  <p>
+                    {[addr.city, addr.state, addr.country, addr.zipcode]
+                      .filter(Boolean)
+                      .join(", ")}
+                  </p>
                 </div>
-              )}
+                {addr.phone && (
+                  <p className="order-item-phone">{addr.phone}</p>
+                )}
+
+                {order.status === "Cancelled" && (
+                  <div className="shelter-assigned">
+                    Status: <b>Cancelled</b>
+                  </div>
+                )}
+              </div>
+
+              <p>Items : {order.items.length}</p>
+              <p>
+                {currency}
+                {order.amount}
+              </p>
+
+              <select
+                onChange={(e) => statusHandler(e, order._id)}
+                value={order.status || "Food Processing"}
+                disabled={TERMINAL.has(order.status)} // disable Delivered/Cancelled/Donated
+                className={`status-select status--${(
+                  order.status || "Food Processing"
+                )
+                  .split(" ")
+                  .join("-")
+                  .toLowerCase()}`}
+              >
+                {STATUS_OPTIONS.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
             </div>
-
-            <p>Items : {order.items.length}</p>
-            <p>
-              {currency}
-              {order.amount}
-            </p>
-
-            <select
-              onChange={(e) => statusHandler(e, order._id)}
-              value={order.status || "Food Processing"}
-              disabled={TERMINAL.has(order.status)} // disable Delivered/Cancelled/Donated
-              className={`status-select status--${(
-                order.status || "Food Processing"
-              )
-                .split(" ")
-                .join("-")
-                .toLowerCase()}`}
-            >
-              {STATUS_OPTIONS.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
