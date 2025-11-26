@@ -4,12 +4,16 @@ import axios from "axios";
 import { StoreContext } from "../../Context/StoreContext";
 import { assets } from "../../assets/assets";
 import { useSocket } from "../../Context/SocketContext";
+import RateOrderModal from "../../components/RateOrderModal/RateOrderModal";
 
 const MyOrders = () => {
   const [data, setData] = useState([]);
   const { url, token, currency } = useContext(StoreContext);
   const socket = useSocket();
-  const orderRefreshHandlerRef = useRef(null); // Store handler reference
+  const orderRefreshHandlerRef = useRef(null);
+
+  const [selectedOrderForRating, setSelectedOrderForRating] = useState(null);
+  const [showRatingModal, setShowRatingModal] = useState(false);
 
   // Decode token to get userId (if not available in StoreContext)
   const getUserId = () => {
@@ -61,7 +65,6 @@ const MyOrders = () => {
   // Listen for order cancellations to refresh the list
   useEffect(() => {
     if (socket) {
-      // Create a named function reference
       orderRefreshHandlerRef.current = () => {
         console.log("📋 MyOrders: Refreshing orders due to cancellation");
         fetchOrders();
@@ -70,7 +73,6 @@ const MyOrders = () => {
       socket.on("orderCancelled", orderRefreshHandlerRef.current);
 
       return () => {
-        // Remove only THIS specific handler, not all handlers
         if (orderRefreshHandlerRef.current) {
           socket.off("orderCancelled", orderRefreshHandlerRef.current);
         }
@@ -88,7 +90,7 @@ const MyOrders = () => {
     return progress;
   };
 
-  // Update progress bars every second
+  // Update progress bars every second (for non-delivered orders)
   const [, forceUpdate] = useState();
   useEffect(() => {
     const interval = setInterval(() => {
@@ -102,7 +104,8 @@ const MyOrders = () => {
       <h2>My Orders</h2>
       <div className="container">
         {data.map((order, index) => {
-          const progress = calculateProgress(order.date);
+          let progress = calculateProgress(order.date);
+
           let isCancelled = false;
           if (order.claimedBy?.toString() === currentUserId) {
             isCancelled = false;
@@ -115,10 +118,19 @@ const MyOrders = () => {
             isCancelled = true;
           }
 
+          const isDeliveredStatus = order.status === "Delivered";
+
+          // 👇 if backend says Delivered, force 100% progress
+          if (isDeliveredStatus) {
+            progress = 100;
+          }
+
           return (
             <div
               key={index}
-              className={`my-orders-order ${isCancelled ? "cancelled-order" : ""}`}
+              className={`my-orders-order ${
+                isCancelled ? "cancelled-order" : ""
+              }`}
             >
               <img src={assets.parcel_icon} alt="" />
               <p>
@@ -155,22 +167,50 @@ const MyOrders = () => {
                     ></div>
                   </div>
                   <p className="progress-text">
-                    {progress >= 100
+                    {isDeliveredStatus
                       ? "Delivered"
                       : progress >= 60
-                        ? "Out for Delivery"
-                        : "Preparing Food"}
+                      ? "Out for Delivery"
+                      : "Preparing Food"}
                   </p>
                 </>
               )}
 
+              {/* Rating UI for delivered orders */}
+              {!isCancelled && isDeliveredStatus && !order.rating && (
+                <button
+                  className="rate-order-btn"
+                  onClick={() => {
+                    setSelectedOrderForRating(order);
+                    setShowRatingModal(true);
+                  }}
+                >
+                  Rate order
+                </button>
+              )}
+
+              {!isCancelled && isDeliveredStatus && order.rating && (
+                <div className="order-rating-display">
+                  <span className="order-rating-stars">
+                    {"★".repeat(order.rating).padEnd(5, "☆")}
+                  </span>
+                  {order.feedback && (
+                    <p className="order-rating-feedback">
+                      “{order.feedback}”
+                    </p>
+                  )}
+                </div>
+              )}
+
               <button
                 onClick={() => cancelOrder(order._id)}
-                disabled={progress >= 100 || isCancelled}
+                disabled={isDeliveredStatus || isCancelled}
                 style={{
-                  opacity: progress >= 100 || isCancelled ? 0.5 : 1,
+                  opacity: isDeliveredStatus || isCancelled ? 0.5 : 1,
                   cursor:
-                    progress >= 100 || isCancelled ? "not-allowed" : "pointer",
+                    isDeliveredStatus || isCancelled
+                      ? "not-allowed"
+                      : "pointer",
                 }}
               >
                 {isCancelled ? "Cancelled" : "Cancel Order"}
@@ -179,6 +219,23 @@ const MyOrders = () => {
           );
         })}
       </div>
+
+      {showRatingModal && selectedOrderForRating && (
+        <RateOrderModal
+          order={selectedOrderForRating}
+          onClose={() => {
+            setShowRatingModal(false);
+            setSelectedOrderForRating(null);
+          }}
+          onRated={(updatedOrder) => {
+            setData((prev) =>
+              prev.map((o) => (o._id === updatedOrder._id ? updatedOrder : o))
+            );
+            setShowRatingModal(false);
+            setSelectedOrderForRating(null);
+          }}
+        />
+      )}
     </div>
   );
 };

@@ -98,3 +98,29 @@
   color: #f57c00;
   font-weight: bold;
 }
+
+.rate-order-btn {
+  margin-top: 0.5rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 8px;
+  border: none;
+  background: #ffb020;
+  color: #222;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.order-rating-display {
+  margin-top: 0.5rem;
+}
+
+.order-rating-stars {
+  font-size: 1rem;
+}
+
+.order-rating-feedback {
+  font-size: 0.85rem;
+  color: #555;
+  margin-top: 0.15rem;
+}
