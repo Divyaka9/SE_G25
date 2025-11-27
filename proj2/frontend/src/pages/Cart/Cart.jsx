@@ -7,6 +7,7 @@ const Cart = () => {
   const {
     cartItems,
     food_list,
+    addToCart,        // ⭐ make sure this exists in StoreContext
     removeFromCart,
     getTotalCartAmount,
     url,
@@ -15,44 +16,98 @@ const Cart = () => {
   } = useContext(StoreContext);
   const navigate = useNavigate();
 
+  const subtotal = getTotalCartAmount();
+  const isCartEmpty = subtotal === 0;
+  const deliveryFee = isCartEmpty ? 0 : deliveryCharge;
+  const grandTotal = isCartEmpty ? 0 : subtotal + deliveryFee;
+
+  const handleCheckout = () => {
+    if (!isCartEmpty) {
+      navigate("/order");
+    }
+  };
+
+  const cartItemsWithData = food_list.filter(
+    (item) => cartItems[item._id] > 0
+  );
+
   return (
     <div className="cart">
-      <div className="cart-items">
-        <div className="cart-items-title">
-          <p>Items</p> <p>Title</p> <p>Price</p> <p>Quantity</p> <p>Total</p>{" "}
-          <p>Remove</p>
+      {/* Empty state */}
+      {cartItemsWithData.length === 0 && (
+        <div className="cart-empty">
+          <h2>Your cart is empty</h2>
+          <p>Add something tasty to get started.</p>
+          <button
+            className="cart-empty-cta"
+            onClick={() => navigate("/menu")}
+          >
+            Browse menu
+          </button>
         </div>
-        <br />
-        <hr />
-        {food_list.map((item, index) => {
-          if (cartItems[item._id] > 0) {
-            return (
-              <div key={index}>
-                <div className="cart-items-title cart-items-item">
-                  <img src={url + "/images/" + item.image} alt="" />
-                  <p>{item.name}</p>
-                  <p>
-                    {currency}
-                    {item.price}
-                  </p>
-                  <div>{cartItems[item._id]}</div>
-                  <p>
-                    {currency}
-                    {item.price * cartItems[item._id]}
-                  </p>
-                  <p
-                    className="cart-items-remove-icon"
+      )}
+
+      {/* Items table / list */}
+      {cartItemsWithData.length > 0 && (
+        <div className="cart-items">
+          <div className="cart-items-title">
+            <p>Items</p> <p>Title</p> <p>Price</p> <p>Quantity</p> <p>Total</p>{" "}
+            <p>Remove</p>
+          </div>
+          <br />
+          <hr />
+
+          {cartItemsWithData.map((item, index) => (
+            <div key={item._id || index}>
+              <div className="cart-items-title cart-items-item">
+                <img src={url + "/images/" + item.image} alt={item.name} />
+                <p>{item.name}</p>
+                <p>
+                  {currency}
+                  {item.price}
+                </p>
+
+                {/* ⭐ Quantity stepper */}
+                <div className="cart-qty-controls">
+                  <button
+                    type="button"
+                    className="cart-qty-btn"
                     onClick={() => removeFromCart(item._id)}
                   >
-                    x
-                  </p>
+                    −
+                  </button>
+                  <span className="cart-qty-value">
+                    {cartItems[item._id]}
+                  </span>
+                  <button
+                    type="button"
+                    className="cart-qty-btn"
+                    onClick={() => addToCart(item._id)}
+                  >
+                    +
+                  </button>
                 </div>
-                <hr />
+
+                <p>
+                  {currency}
+                  {item.price * cartItems[item._id]}
+                </p>
+
+                <button
+                  type="button"
+                  className="cart-items-remove-icon"
+                  onClick={() => removeFromCart(item._id)}
+                >
+                  Remove
+                </button>
               </div>
-            );
-          }
-        })}
-      </div>
+              <hr />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Summary + promo code */}
       <div className="cart-bottom">
         <div className="cart-total">
           <h2>Cart Totals</h2>
@@ -61,7 +116,7 @@ const Cart = () => {
               <p>Subtotal</p>
               <p>
                 {currency}
-                {getTotalCartAmount()}
+                {subtotal}
               </p>
             </div>
             <hr />
@@ -69,7 +124,7 @@ const Cart = () => {
               <p>Delivery Fee</p>
               <p>
                 {currency}
-                {getTotalCartAmount() === 0 ? 0 : deliveryCharge}
+                {deliveryFee}
               </p>
             </div>
             <hr />
@@ -77,16 +132,21 @@ const Cart = () => {
               <b>Total</b>
               <b>
                 {currency}
-                {getTotalCartAmount() === 0
-                  ? 0
-                  : getTotalCartAmount() + deliveryCharge}
+                {grandTotal}
               </b>
             </div>
           </div>
-          <button onClick={() => navigate("/order")}>
-            PROCEED TO CHECKOUT
+          <button
+            onClick={handleCheckout}
+            disabled={isCartEmpty}
+            className={`cart-checkout-btn ${
+              isCartEmpty ? "cart-checkout-btn-disabled" : ""
+            }`}
+          >
+            {isCartEmpty ? "ADD ITEMS TO CHECKOUT" : "PROCEED TO CHECKOUT"}
           </button>
         </div>
+
         <div className="cart-promocode">
           <div>
             <p>If you have a promo code, Enter it here</p>
