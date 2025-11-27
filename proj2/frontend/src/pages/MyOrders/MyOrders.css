@@ -124,3 +124,76 @@
   color: #555;
   margin-top: 0.15rem;
 }
+.claimed-badge {
+  margin-top: 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #0a7;
+}
+
+.order-price-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.price-main {
+  font-weight: 600;
+}
+
+.price-original {
+  font-size: 0.8rem;
+  color: #777;
+}
+
+.price-original-value {
+  text-decoration: line-through;
+}
+
+.price-paid {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.price-saved {
+  font-size: 0.8rem;
+  color: #16a34a; /* green-ish */
+}
+/* Right-side column for claimed badge + rating */
+.claimed-rating-col {
+  margin-left: auto;              /* push this column to the far right */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;          /* align text to the right */
+  gap: 4px;
+}
+
+.claimed-rating-col .claimed-badge {
+  margin: 0;
+}
+
+/* Rating block aligned under the badge */
+.order-rating-display {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.order-rating-stars {
+  font-size: 0.9rem;
+}
+
+.order-rating-feedback {
+  font-size: 0.85rem;
+  max-width: 220px;               /* so long text wraps nicely */
+  text-align: right;
+  color: #555;
+}
+.claimed-rating-col {
+  gap: 6px;          /* a little more breathing room */
+}
+
+.order-rating-feedback {
+  max-width: 260px;  /* slightly wider comment block */
+}

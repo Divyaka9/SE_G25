@@ -119,11 +119,33 @@ const MyOrders = () => {
           }
 
           const isDeliveredStatus = order.status === "Delivered";
+          const isDonatedStatus = order.status === "Donated";
 
-          // 👇 if backend says Delivered, force 100% progress
-          if (isDeliveredStatus) {
+          // if backend says Delivered or Donated, force 100% progress
+          if (isDeliveredStatus || isDonatedStatus) {
             progress = 100;
           }
+
+          // 🔹 price & discount logic
+          const currentAmount =
+            typeof order.amount === "number" ? order.amount : 0;
+
+          const originalAmount =
+            typeof order.originalAmount === "number"
+              ? order.originalAmount
+              : currentAmount;
+
+          // claimed order = current owner != original user
+          const isClaimedOrder =
+            order.originalUserId &&
+            order.originalUserId.toString() !== order.userId.toString();
+
+          const hasDiscount =
+            isClaimedOrder && originalAmount > currentAmount;
+
+          const savings = hasDiscount
+            ? Math.max(originalAmount - currentAmount, 0)
+            : 0;
 
           return (
             <div
@@ -134,18 +156,51 @@ const MyOrders = () => {
             >
               <img src={assets.parcel_icon} alt="" />
               <p>
-                {order.items.map((item, index) => {
-                  if (index === order.items.length - 1) {
+                {order.items.map((item, i) => {
+                  if (i === order.items.length - 1) {
                     return item.name + " x " + item.quantity;
                   } else {
                     return item.name + " x " + item.quantity + ", ";
                   }
                 })}
               </p>
-              <p>
-                {currency}
-                {order.amount}.00
+
+              {/* 💰 PRICE COLUMN */}
+              <p className="order-price-cell">
+                {hasDiscount ? (
+                  <>
+                    <span className="price-original">
+                      Original:{" "}
+                      <span className="price-original-value">
+                        {currency}
+                        {originalAmount.toFixed(2)}
+                      </span>
+                    </span>
+
+                    <span className="price-paid">
+                      You paid:{" "}
+                      <strong>
+                        {currency}
+                        {currentAmount.toFixed(2)}
+                      </strong>
+                    </span>
+
+                    <span className="price-saved">
+                      You saved{" "}
+                      <strong>
+                        {currency}
+                        {savings.toFixed(2)}
+                      </strong>
+                    </span>
+                  </>
+                ) : (
+                  <span className="price-main">
+                    {currency}
+                    {currentAmount.toFixed(2)}
+                  </span>
+                )}
               </p>
+
               <p>Items: {order.items.length}</p>
 
               {isCancelled ? (
@@ -162,12 +217,16 @@ const MyOrders = () => {
                 <>
                   <div className="progress-container">
                     <div
-                      className="progress-bar"
+                      className={`progress-bar ${
+                        isDonatedStatus ? "donated" : ""
+                      }`}
                       style={{ width: `${progress}%` }}
                     ></div>
                   </div>
                   <p className="progress-text">
-                    {isDeliveredStatus
+                    {isDonatedStatus
+                      ? "Donated to shelter"
+                      : isDeliveredStatus
                       ? "Delivered"
                       : progress >= 60
                       ? "Out for Delivery"
@@ -176,18 +235,25 @@ const MyOrders = () => {
                 </>
               )}
 
-              {/* Rating UI for delivered orders */}
-              {!isCancelled && isDeliveredStatus && !order.rating && (
-                <button
-                  className="rate-order-btn"
-                  onClick={() => {
-                    setSelectedOrderForRating(order);
-                    setShowRatingModal(true);
-                  }}
-                >
-                  Rate order
-                </button>
+              {/* Claimed order badge */}
+              {isClaimedOrder && !isCancelled && (
+                <p className="claimed-badge">Claimed order</p>
               )}
+
+              {/* Rating UI for delivered orders */}
+              {!isCancelled &&
+                isDeliveredStatus &&
+                !order.rating && (
+                  <button
+                    className="rate-order-btn"
+                    onClick={() => {
+                      setSelectedOrderForRating(order);
+                      setShowRatingModal(true);
+                    }}
+                  >
+                    Rate order
+                  </button>
+                )}
 
               {!isCancelled && isDeliveredStatus && order.rating && (
                 <div className="order-rating-display">
@@ -204,11 +270,14 @@ const MyOrders = () => {
 
               <button
                 onClick={() => cancelOrder(order._id)}
-                disabled={isDeliveredStatus || isCancelled}
+                disabled={isDeliveredStatus || isDonatedStatus || isCancelled}
                 style={{
-                  opacity: isDeliveredStatus || isCancelled ? 0.5 : 1,
+                  opacity:
+                    isDeliveredStatus || isDonatedStatus || isCancelled
+                      ? 0.5
+                      : 1,
                   cursor:
-                    isDeliveredStatus || isCancelled
+                    isDeliveredStatus || isDonatedStatus || isCancelled
                       ? "not-allowed"
                       : "pointer",
                 }}
