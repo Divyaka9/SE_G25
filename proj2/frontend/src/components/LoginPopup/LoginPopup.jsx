@@ -9,7 +9,7 @@ const LoginPopup = ({ setShowLogin }) => {
   const { setToken, url, loadCartData } = useContext(StoreContext);
   const [currState, setCurrState] = useState("Sign Up");
 
-  // ✅ form data + address + preferences
+  // form data + address + preferences
   const [data, setData] = useState({
     name: "",
     email: "",
@@ -17,20 +17,19 @@ const LoginPopup = ({ setShowLogin }) => {
     addressFormatted: "",
     addressLat: "",
     addressLng: "",
-    dietPreference: "any",      // "any" | "veg-only"
-    sugarPreference: "any",     // "any" | "no-sweets"
+    dietPreference: "any", // "any" | "veg-only"
+    sugarPreference: "any", // "any" | "no-sweets"
   });
 
-  // ✅ for address suggestions
+  // address suggestions
   const [suggestions, setSuggestions] = useState([]);
 
   const onChangeHandler = (event) => {
-    const name = event.target.name;
-    const value = event.target.value;
+    const { name, value } = event.target;
     setData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // ✅ handle address typing (free OpenStreetMap autocomplete)
+  // handle address typing (free OpenStreetMap autocomplete)
   const handleAddressChange = async (e) => {
     const query = e.target.value;
     setData((prev) => ({ ...prev, addressFormatted: query }));
@@ -52,7 +51,7 @@ const LoginPopup = ({ setShowLogin }) => {
     }
   };
 
-  // ✅ when a user selects a suggestion
+  // when a user selects a suggestion
   const handleSelectSuggestion = (place) => {
     setData((prev) => ({
       ...prev,
@@ -76,13 +75,13 @@ const LoginPopup = ({ setShowLogin }) => {
     let payload;
 
     if (currState === "Login") {
-      // 🔹 Login: only email + password
+      // Login: only email + password
       payload = {
         email: data.email,
         password: data.password,
       };
     } else {
-      // 🔹 Sign Up: full payload including address + preferences
+      // Sign Up: full payload including address + preferences
       payload = {
         name: data.name,
         email: data.email,
@@ -92,8 +91,8 @@ const LoginPopup = ({ setShowLogin }) => {
           lat: data.addressLat,
           lng: data.addressLng,
         },
-        dietPreference: data.dietPreference,       // ⭐ new
-        sugarPreference: data.sugarPreference,     // ⭐ new
+        dietPreference: data.dietPreference,
+        sugarPreference: data.sugarPreference,
       };
     }
 
@@ -126,19 +125,24 @@ const LoginPopup = ({ setShowLogin }) => {
         </div>
 
         <div className="login-popup-inputs">
-          {currState === "Sign Up" ? (
+          {currState === "Sign Up" && (
             <>
-              <input
-                name="name"
-                onChange={onChangeHandler}
-                value={data.name}
-                type="text"
-                placeholder="Your name"
-                required
-              />
+              {/* Name */}
+              <div className="login-field">
+                <label className="login-label">Full name</label>
+                <input
+                  name="name"
+                  onChange={onChangeHandler}
+                  value={data.name}
+                  type="text"
+                  placeholder="Your name"
+                  required
+                />
+              </div>
 
-              {/* ✅ Address input with suggestions */}
-              <div style={{ position: "relative" }}>
+              {/* Address with suggestions */}
+              <div className="login-field address-field">
+                <label className="login-label">Address</label>
                 <input
                   type="text"
                   placeholder="Enter your address"
@@ -148,28 +152,10 @@ const LoginPopup = ({ setShowLogin }) => {
                   autoComplete="off"
                 />
                 {suggestions.length > 0 && (
-                  <ul
-                    style={{
-                      listStyle: "none",
-                      background: "#fff",
-                      border: "1px solid #ccc",
-                      padding: 0,
-                      margin: 0,
-                      position: "absolute",
-                      width: "100%",
-                      zIndex: 1000,
-                      maxHeight: "150px",
-                      overflowY: "auto",
-                    }}
-                  >
+                  <ul className="address-suggestions">
                     {suggestions.map((s) => (
                       <li
                         key={s.place_id}
-                        style={{
-                          padding: "8px",
-                          cursor: "pointer",
-                          borderBottom: "1px solid #eee",
-                        }}
                         onClick={() => handleSelectSuggestion(s)}
                       >
                         {s.display_name}
@@ -179,46 +165,62 @@ const LoginPopup = ({ setShowLogin }) => {
                 )}
               </div>
 
-              {/* ⭐ Diet preference select */}
-              <select
-                name="dietPreference"
-                value={data.dietPreference}
-                onChange={onChangeHandler}
-                className="login-pref-select"
-              >
-                <option value="any">No diet preference</option>
-                <option value="veg-only">Vegetarian only</option>
-              </select>
+              {/* Preferences row */}
+              <div className="login-two-column">
+                <div className="login-field">
+                  <label className="login-label">Diet preference</label>
+                  <select
+                    name="dietPreference"
+                    value={data.dietPreference}
+                    onChange={onChangeHandler}
+                  >
+                    <option value="any">No diet preference</option>
+                    <option value="veg-only">Vegetarian only</option>
+                  </select>
+                </div>
 
-              {/* ⭐ Sugar preference select */}
-              <select
-                name="sugarPreference"
-                value={data.sugarPreference}
-                onChange={onChangeHandler}
-                className="login-pref-select"
-              >
-                <option value="any">Okay with sweets / desserts</option>
-                <option value="no-sweets">Avoid sweets / desserts (sugar-free)</option>
-              </select>
+                <div className="login-field">
+                  <label className="login-label">Sugar preference</label>
+                  <select
+                    name="sugarPreference"
+                    value={data.sugarPreference}
+                    onChange={onChangeHandler}
+                  >
+                    <option value="any">Okay with sweets / desserts</option>
+                    <option value="no-sweets">
+                      Avoid sweets / desserts (sugar-free)
+                    </option>
+                  </select>
+                </div>
+              </div>
             </>
-          ) : null}
+          )}
 
-          <input
-            name="email"
-            onChange={onChangeHandler}
-            value={data.email}
-            type="email"
-            placeholder="Your email"
-            required
-          />
-          <input
-            name="password"
-            onChange={onChangeHandler}
-            value={data.password}
-            type="password"
-            placeholder="Password"
-            required
-          />
+          {/* Email */}
+          <div className="login-field">
+            <label className="login-label">Email</label>
+            <input
+              name="email"
+              onChange={onChangeHandler}
+              value={data.email}
+              type="email"
+              placeholder="Your email"
+              required
+            />
+          </div>
+
+          {/* Password */}
+          <div className="login-field">
+            <label className="login-label">Password</label>
+            <input
+              name="password"
+              onChange={onChangeHandler}
+              value={data.password}
+              type="password"
+              placeholder="Password"
+              required
+            />
+          </div>
         </div>
 
         <button>{currState === "Login" ? "Login" : "Create account"}</button>

@@ -1,68 +1,165 @@
-.login-popup{
-    position: absolute;
-    z-index: 1;
-    width: 100%;
-    height: 100%;
-    background-color: #00000090;
-    display: grid;
-}
-.login-popup-container{
-    place-self: center;
-    width: max(23vw,330px);
-    color: #808080;
-    background-color: white;
-    display: flex;
-    flex-direction: column;
-    gap: 25px;
-    padding: 25px 30px;
-    border-radius: 8px;
-    font-size: 14px;
-    animation: fadeIn 0.5s;
-}
-.login-popup-title{
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    color: black;
-}
-.login-popup-title img{
-    width: 16px;
-    cursor: pointer;
-}
-.login-popup-inputs{
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-.login-popup-inputs input{
-    outline: none;
-    border: 1px solid #C9C9C9;
-    padding: 10px;
-    border-radius: 4px;
-}
-.login-popup-container button{
-    border: none;
-    padding: 10px;
-    border-radius: 4px;
-    color: white;
-    background-color: #FF4C24;
-    font-size: 15px;
-    cursor: pointer;
-}
-.login-popup-condition{
-    display: flex;
-    align-items: start;
-    gap: 8px;
-    margin-top: -15px;
+.login-popup {
+  position: absolute;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  background-color: #00000090;
+  display: grid;
 }
 
-.login-popup-condition input{
-    margin-top: 5px;
+.login-popup-container {
+  place-self: center;
+  width: max(23vw, 330px);
+  color: #808080;
+  background-color: white;
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  padding: 25px 30px;
+  border-radius: 12px;
+  font-size: 14px;
+  animation: fadeIn 0.5s;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.15);
 }
 
+.login-popup-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: black;
+}
 
-.login-popup p span{
-    color: #FF4C24;
-    font-weight: 500;
-    cursor: pointer;
+.login-popup-title h2 {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.login-popup-title img {
+  width: 16px;
+  cursor: pointer;
+}
+
+/* ---------- New field layout styles ---------- */
+
+.login-popup-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Each field is label + input/select stacked nicely */
+.login-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Label styling */
+.login-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #444;
+}
+
+/* Two-column row for preferences */
+.login-two-column {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+/* Inputs + selects share same look */
+.login-popup-inputs input,
+.login-popup-inputs select {
+  outline: none;
+  border: 1px solid #c9c9c9;
+  padding: 9px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.login-popup-inputs input:focus,
+.login-popup-inputs select:focus {
+  border-color: #ff4c24;
+  box-shadow: 0 0 0 2px rgba(255, 76, 36, 0.15);
+}
+
+/* Slightly nicer select styling */
+.login-popup-inputs select {
+  background-color: #fafafa;
+  cursor: pointer;
+}
+
+/* Address field + suggestions list */
+.address-field {
+  position: relative;
+}
+
+.address-suggestions {
+  list-style: none;
+  background: #ffffff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 4px 0;
+  margin: 4px 0 0;
+  position: absolute;
+  width: 100%;
+  z-index: 1000;
+  max-height: 170px;
+  overflow-y: auto;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+}
+
+.address-suggestions li {
+  padding: 8px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  color: #333;
+}
+
+.address-suggestions li:hover {
+  background-color: #fff3ef;
+}
+
+/* ---------- Buttons / footer ---------- */
+
+.login-popup-container button {
+  border: none;
+  padding: 10px;
+  border-radius: 6px;
+  color: white;
+  background-color: #ff4c24;
+  font-size: 15px;
+  cursor: pointer;
+  font-weight: 500;
+  margin-top: 4px;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.login-popup-container button:hover {
+  background-color: #e43c17;
+  box-shadow: 0 8px 18px rgba(255, 76, 36, 0.4);
+}
+
+.login-popup-condition {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: -5px;
+}
+
+.login-popup-condition input {
+  margin-top: 4px;
+}
+
+.login-popup-condition p {
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.login-popup p span {
+  color: #ff4c24;
+  font-weight: 500;
+  cursor: pointer;
 }
