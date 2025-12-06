@@ -44,6 +44,11 @@ orderRouter.post("/driver/deliver", authMiddleware, driverMarkDelivered);
 
 // 🔹 NEW: user sees cancelled/redistribute orders nearby
 orderRouter.get("/user/nearby", authMiddleware, getNearbyCancelledOrders);
+orderRouter.post(
+  "/user/claim",
+  authMiddleware,
+  claimCancelledOrder
+);
 
 // ESM export only
 export default orderRouter;

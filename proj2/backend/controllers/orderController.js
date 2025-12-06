@@ -885,6 +885,71 @@ const getNearbyCancelledOrders = async (req, res) => {
   }
 };
 
+/**
+ * POST /api/order/user/claim
+ * Body: { orderId }
+ * Logic:
+ *  - Only allow if status in ["Cancelled", "Redistribute"]
+ *  - Atomically set status -> "Donated"
+ *  - No schema changes (no new fields)
+ */
+const claimCancelledOrder = async (req, res) => {
+  try {
+    const { orderId } = req.body;
+    const userId = req.user && req.user.id; // depends on your auth middleware
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "User not authenticated",
+      });
+    }
+
+    if (!orderId) {
+      return res.status(400).json({
+        success: false,
+        message: "orderId is required",
+      });
+    }
+
+    // Atomic find + update: only if status is still Cancelled/Redistribute
+    const updated = await orderModel.findOneAndUpdate(
+      {
+        _id: orderId,
+        status: { $in: ["Cancelled", "Redistribute"] },
+      },
+      {
+        $set: {
+          status: "Donated",
+          // If you were allowed schema changes, you could add
+          // claimedByUser: userId, claimedAt: new Date(), etc.
+        },
+      },
+      { new: true }
+    );
+
+    if (!updated) {
+      // Either not found, or already Donated / Food Preparing / etc.
+      return res.status(400).json({
+        success: false,
+        message:
+          "Order not available to claim (already donated or not found)",
+      });
+    }
+
+    return res.json({
+      success: true,
+      data: updated,
+      message: "Order successfully claimed and marked as Donated",
+    });
+  } catch (err) {
+    console.error("Error in claimCancelledOrder:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Server error while claiming order",
+    });
+  }
+};
 
 export {
   placeOrder,
@@ -903,4 +968,5 @@ export {
   driverMarkDelivered,
   userImpact,
   getNearbyCancelledOrders,
+  claimCancelledOrder,
 };
