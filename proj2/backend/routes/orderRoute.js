@@ -8,7 +8,7 @@ import {
   verifyOrder,
   placeOrderCod,
   cancelOrder,
-  claimOrder,
+  claimOrder,           // existing
   assignShelter,
   rateOrder,
   driverAvailableOrders,
@@ -16,6 +16,8 @@ import {
   driverClaimOrder,
   driverMarkDelivered,
   userImpact,
+  getNearbyCancelledOrders, // new controller
+  claimCancelledOrder,      // new controller
 } from "../controllers/orderController.js";
 
 const orderRouter = express.Router();
@@ -27,14 +29,21 @@ orderRouter.post("/place", authMiddleware, placeOrder);
 orderRouter.post("/status", updateStatus);
 orderRouter.post("/verify", verifyOrder);
 orderRouter.post("/placecod", authMiddleware, placeOrderCod);
+
+// existing claim route (keep if teammates use it)
 orderRouter.post("/claim", authMiddleware, claimOrder);
+
 orderRouter.post("/assign-shelter", assignShelter);
 orderRouter.get("/impact", authMiddleware, userImpact);
-// NEW route – user rates a delivered order
 orderRouter.post("/rate", authMiddleware, rateOrder);
+
 orderRouter.get("/driver/available", authMiddleware, driverAvailableOrders);
 orderRouter.get("/driver/my", authMiddleware, driverMyOrders);
 orderRouter.post("/driver/claim", authMiddleware, driverClaimOrder);
 orderRouter.post("/driver/deliver", authMiddleware, driverMarkDelivered);
 
+// 🔹 NEW: user sees cancelled/redistribute orders nearby
+orderRouter.get("/user/nearby", authMiddleware, getNearbyCancelledOrders);
+
+// ESM export only
 export default orderRouter;

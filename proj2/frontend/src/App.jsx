@@ -38,7 +38,15 @@ const App = () => {
           <Route path="/verify" element={<Verify />} />
           <Route path="/driver/register" element={<DriverRegister />} />
           <Route path="/driver/login" element={<DriverLogin />} />
-          <Route path="/impact" element={<ProtectedRoute> <Impact /> </ProtectedRoute>} />
+          <Route
+            path="/impact"
+            element={
+              <ProtectedRoute>
+                {" "}
+                <Impact />{" "}
+              </ProtectedRoute>
+            }
+          />
 
           <Route
             path="/driver/orders"

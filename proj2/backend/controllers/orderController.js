@@ -766,7 +766,6 @@ const driverMarkDelivered = async (req, res) => {
   }
 };
 
-
 // ⬇ ADD THIS in orderController.js (near other handlers)
 const userImpact = async (req, res) => {
   try {
@@ -809,6 +808,84 @@ const userImpact = async (req, res) => {
 };
 
 
+// Small helper for Haversine distance in km (no schema change needed)
+function distanceInKm(lat1, lon1, lat2, lon2) {
+  const toRad = (v) => (v * Math.PI) / 180;
+
+  const R = 6371; // Earth radius in km
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) *
+      Math.cos(toRad(lat2)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+/**
+ * GET /api/order/user/nearby
+ * Query: lat, lng, radiusKm (optional, default 5)
+ * Returns: orders with status in ["Cancelled", "Redistribute"] within radius
+ */
+const getNearbyCancelledOrders = async (req, res) => {
+  try {
+    const { lat, lng, radiusKm = 5 } = req.query;
+
+    const latitude = parseFloat(lat);
+    const longitude = parseFloat(lng);
+    const radius = parseFloat(radiusKm) || 5;
+
+    if (
+      Number.isNaN(latitude) ||
+      Number.isNaN(longitude)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "lat and lng query params are required and must be numbers",
+      });
+    }
+
+    // Fetch all cancelled/redistribute orders
+    const rawOrders = await orderModel.find({
+      status: { $in: ["Cancelled", "Redistribute"] },
+    });
+
+    // Filter in Node based on address.lat/lng
+    const filtered = rawOrders.filter((o) => {
+      const addr = o.address || {};
+      const olat = addr.lat;
+      const olng = addr.lng;
+
+      if (
+        typeof olat !== "number" ||
+        typeof olng !== "number"
+      ) {
+        return false;
+      }
+
+      const distKm = distanceInKm(latitude, longitude, olat, olng);
+      return distKm <= radius;
+    });
+
+    return res.json({
+      success: true,
+      data: filtered,
+    });
+  } catch (err) {
+    console.error("Error in getNearbyCancelledOrders:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Server error while fetching nearby cancelled orders",
+    });
+  }
+};
+
+
 export {
   placeOrder,
   listOrders,
@@ -825,4 +902,5 @@ export {
   driverClaimOrder,
   driverMarkDelivered,
   userImpact,
+  getNearbyCancelledOrders,
 };
