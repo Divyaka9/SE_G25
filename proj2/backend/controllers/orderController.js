@@ -167,6 +167,8 @@ const cancelOrder = async (req, res) => {
         cancelledByUserId: userId,
         foodCategory,
         message: "Order cancelled by user; available for redistribution",
+        addressLat: order.address?.lat,
+        addressLng: order.address?.lng,
       });
     }
 
@@ -808,7 +810,75 @@ const userImpact = async (req, res) => {
 };
 
 
-// Small helper for Haversine distance in km (no schema change needed)
+// ---- Helpers copied from server.js so we can reuse the same rules ----
+
+// Check if an order is veg-only based on item flags / categories
+function isVegOnlyOrder(orderItems = []) {
+  if (!Array.isArray(orderItems) || orderItems.length === 0) return true;
+
+  return orderItems.every((item) => {
+    if (!item) return true;
+
+    // 1) explicit boolean flags win if present
+    if (typeof item.isVeg === "boolean") {
+      return item.isVeg === true;
+    }
+
+    const rawCat = (item.category || item.type || "").toString();
+    const cat = rawCat.toLowerCase();
+    const catCompact = rawCat.replace(/\s+/g, "").toLowerCase(); // "Non Veg" → "nonveg"
+
+    // 🚫 clearly non-veg categories
+    if (
+      cat.includes("non veg") ||
+      cat.includes("non-veg") ||
+      catCompact === "nonveg" ||
+      catCompact.startsWith("nonveg") || // e.g. "nonveg starters"
+      cat === "nv"
+    ) {
+      return false;
+    }
+
+    // otherwise assume veg by default
+    return true;
+  });
+}
+
+
+// Detect if an order has sweets / desserts
+function orderHasSweets(orderItems = []) {
+  if (!Array.isArray(orderItems) || orderItems.length === 0) return false;
+
+  return orderItems.some((item) => {
+    if (!item) return false;
+
+    const catRaw = (item.category || item.section || item.type || "")
+      .toString()
+      .toLowerCase();
+
+    const nameRaw = (item.name || "").toString().toLowerCase();
+
+    const categoryIsSweet = [
+      "cake",
+      "cakes",
+      "dessert",
+      "desserts",
+      "desert",
+      "deserts",
+      "sweets",
+      "sweet",
+    ].some((k) => catRaw.includes(k));
+
+    const nameLooksSweet =
+      /cake|dessert|ice cream|ice-cream|gelato|baklava|tiramisu|pastry|pudding|sweet/i.test(
+        nameRaw
+      );
+
+    return categoryIsSweet || nameLooksSweet;
+  });
+}
+
+// Haversine in km
 function distanceInKm(lat1, lon1, lat2, lon2) {
   const toRad = (v) => (v * Math.PI) / 180;
 
@@ -828,75 +898,13 @@ function distanceInKm(lat1, lon1, lat2, lon2) {
 }
 
 /**
- * GET /api/order/user/nearby
- * Query: lat, lng, radiusKm (optional, default 5)
- * Returns: orders with status in ["Cancelled", "Redistribute"] within radius
+ * GET /api/order/user/available
+ * Returns: all Redistribute orders this user is eligible to see
+ * Uses the SAME diet + sugar + (optional) distance rules as the notification flow.
  */
-const getNearbyCancelledOrders = async (req, res) => {
+const getUserAvailableOrders = async (req, res) => {
   try {
-    const { lat, lng, radiusKm = 5 } = req.query;
-
-    const latitude = parseFloat(lat);
-    const longitude = parseFloat(lng);
-    const radius = parseFloat(radiusKm) || 5;
-
-    if (
-      Number.isNaN(latitude) ||
-      Number.isNaN(longitude)
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: "lat and lng query params are required and must be numbers",
-      });
-    }
-
-    // Fetch all cancelled/redistribute orders
-    const rawOrders = await orderModel.find({
-      status: { $in: ["Cancelled", "Redistribute"] },
-    });
-
-    // Filter in Node based on address.lat/lng
-    const filtered = rawOrders.filter((o) => {
-      const addr = o.address || {};
-      const olat = addr.lat;
-      const olng = addr.lng;
-
-      if (
-        typeof olat !== "number" ||
-        typeof olng !== "number"
-      ) {
-        return false;
-      }
-
-      const distKm = distanceInKm(latitude, longitude, olat, olng);
-      return distKm <= radius;
-    });
-
-    return res.json({
-      success: true,
-      data: filtered,
-    });
-  } catch (err) {
-    console.error("Error in getNearbyCancelledOrders:", err);
-    return res.status(500).json({
-      success: false,
-      message: "Server error while fetching nearby cancelled orders",
-    });
-  }
-};
-
-/**
- * POST /api/order/user/claim
- * Body: { orderId }
- * Logic:
- *  - Only allow if status in ["Cancelled", "Redistribute"]
- *  - Atomically set status -> "Donated"
- *  - No schema changes (no new fields)
- */
-const claimCancelledOrder = async (req, res) => {
-  try {
-    const { orderId } = req.body;
-    const userId = req.user && req.user.id; // depends on your auth middleware
+    const userId = req.body.userId; // set by authMiddleware
 
     if (!userId) {
       return res.status(401).json({
@@ -905,51 +913,255 @@ const claimCancelledOrder = async (req, res) => {
       });
     }
 
-    if (!orderId) {
-      return res.status(400).json({
+    // Fetch user preferences + location
+    const user = await userModel
+      .findById(userId)
+      .select("dietPreference sugarPreference address")
+      .lean();
+
+    if (!user) {
+      return res.status(404).json({
         success: false,
-        message: "orderId is required",
+        message: "User not found",
       });
     }
 
-    // Atomic find + update: only if status is still Cancelled/Redistribute
-    const updated = await orderModel.findOneAndUpdate(
-      {
-        _id: orderId,
-        status: { $in: ["Cancelled", "Redistribute"] },
-      },
-      {
-        $set: {
-          status: "Donated",
-          // If you were allowed schema changes, you could add
-          // claimedByUser: userId, claimedAt: new Date(), etc.
-        },
-      },
-      { new: true }
-    );
+    const diet = (user.dietPreference || "any").toLowerCase();
+    const sugarRaw = (user.sugarPreference || "any").toString().toLowerCase();
+    const sugarIsNoSweets =
+      sugarRaw.includes("no") && sugarRaw.includes("sweet");
 
-    if (!updated) {
-      // Either not found, or already Donated / Food Preparing / etc.
-      return res.status(400).json({
-        success: false,
-        message:
-          "Order not available to claim (already donated or not found)",
-      });
-    }
+    // User location (from their saved address)
+    const uAddr = user.address || {};
+    const userLat =
+      uAddr.lat !== undefined ? parseFloat(uAddr.lat) : NaN;
+    const userLng =
+      uAddr.lng !== undefined ? parseFloat(uAddr.lng) : NaN;
+
+    const USE_LOCATION =
+      !Number.isNaN(userLat) && !Number.isNaN(userLng);
+
+    const RADIUS_KM = 10; // same idea as notifications
+
+    // All Redistribute orders (only these are claimable via claimOrder)
+    const rawOrders = await orderModel
+      .find({ status: STATUS.REDISTRIBUTE })
+      .sort({ date: -1 });
+
+    const eligible = rawOrders.filter((order) => {
+      // Don’t show them their own cancelled order in this list
+      if (String(order.userId) === String(userId)) {
+        return false;
+      }
+
+      const items = order.items || [];
+
+      // diet side
+      let vegOnly = isVegOnlyOrder(items);
+      const hasSweets = orderHasSweets(items);
+
+      // Treat desserts as veg for diet filter (same as server.js)
+      if (hasSweets && vegOnly === false) {
+        vegOnly = true;
+      }
+
+      // diet rule: veg-only users cannot see clearly non-veg orders
+      if (!vegOnly && diet === "veg-only") {
+        return false;
+      }
+
+      // sugar rule: no-sweets users cannot see orders with sweets
+      if (hasSweets && sugarIsNoSweets) {
+        return false;
+      }
+
+      // distance rule: only if BOTH user + order have coords
+      if (USE_LOCATION) {
+        const addr = order.address || {};
+        const oLat =
+          addr.lat !== undefined ? parseFloat(addr.lat) : NaN;
+        const oLng =
+          addr.lng !== undefined ? parseFloat(addr.lng) : NaN;
+
+        if (!Number.isNaN(oLat) && !Number.isNaN(oLng)) {
+          const distKm = distanceInKm(userLat, userLng, oLat, oLng);
+          if (distKm > RADIUS_KM) {
+            return false;
+          }
+        }
+      }
+
+      return true;
+    });
 
     return res.json({
       success: true,
-      data: updated,
-      message: "Order successfully claimed and marked as Donated",
+      data: eligible,
     });
   } catch (err) {
-    console.error("Error in claimCancelledOrder:", err);
+    console.error("getUserAvailableOrders error:", err);
     return res.status(500).json({
       success: false,
-      message: "Server error while claiming order",
+      message: "Server error while fetching available orders",
     });
   }
 };
+
+
+// /**
+//  * GET /api/order/user/nearby
+//  * Query: lat, lng, radiusKm (optional, default 5)
+//  * Returns: orders with status in ["Cancelled", "Redistribute"] within radius
+//  */
+// const getNearbyCancelledOrders = async (req, res) => {
+//   try {
+//     const { lat, lng, radiusKm = 5 } = req.query;
+
+//     const latitude = parseFloat(lat);
+//     const longitude = parseFloat(lng);
+//     const radius = parseFloat(radiusKm) || 5;
+
+//     if (
+//       Number.isNaN(latitude) ||
+//       Number.isNaN(longitude)
+//     ) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "lat and lng query params are required and must be numbers",
+//       });
+//     }
+
+//     // Fetch all cancelled/redistribute orders
+//     const rawOrders = await orderModel.find({
+//       status: { $in: ["Cancelled", "Redistribute"] },
+//     });
+
+//     console.log("DEBUG nearby: total cancelled/redistribute orders:", rawOrders.length);
+
+// rawOrders.forEach((o) => {
+//   const addr = o.address || {};
+//   console.log("DEBUG order raw coords:", {
+//     id: o._id.toString(),
+//     status: o.status,
+//     lat: addr.lat,
+//     lng: addr.lng,
+//     typeLat: typeof addr.lat,
+//     typeLng: typeof addr.lng,
+//   });
+// });
+
+//     const filtered = rawOrders.filter((o) => {
+//   const addr = o.address || {};
+
+//   // parse to numbers even if stored as strings
+//   const olat = addr.lat !== undefined ? parseFloat(addr.lat) : NaN;
+//   const olng = addr.lng !== undefined ? parseFloat(addr.lng) : NaN;
+
+//   if (Number.isNaN(olat) || Number.isNaN(olng)) {
+//     // optional debug
+//     // console.log("DEBUG skip (no coords):", o._id.toString(), addr);
+//     return false;
+//   }
+
+//   const distKm = distanceInKm(latitude, longitude, olat, olng);
+
+//   // optional debug
+//   // console.log("DEBUG distance:", { id: o._id.toString(), distKm });
+
+//   return distKm <= radius;
+// });
+
+
+//     return res.json({
+//       success: true,
+//       data: filtered,
+//     });
+//   } catch (err) {
+//     console.error("Error in getNearbyCancelledOrders:", err);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Server error while fetching nearby cancelled orders",
+//     });
+//   }
+// };
+
+// /**
+//  * POST /api/order/user/claim
+//  * Body: { orderId }
+//  * Logic:
+//  *  - Only allow if status in ["Cancelled", "Redistribute"]
+//  *  - Atomically set status -> "Donated"
+//  *  - No schema changes (no new fields)
+//  */
+// const claimCancelledOrder = async (req, res) => {
+//   try {
+//     const { orderId } = req.body;
+//     const userId = req.user && req.user.id; // or req.user._id depending on your auth
+
+//     if (!userId) {
+//       return res.status(401).json({
+//         success: false,
+//         message: "User not authenticated",
+//       });
+//     }
+
+//     if (!orderId) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "orderId is required",
+//       });
+//     }
+
+//     // get user name for claimedByName
+//     const user = await userModel.findById(userId).select("name").lean();
+//     const userName = user?.name || "Unknown";
+
+//     // Atomic find + update:
+//     // - only if status is still Cancelled/Redistribute
+//     // - and not already claimed
+//     const updated = await orderModel.findOneAndUpdate(
+//       {
+//         _id: orderId,
+//         status: { $in: ["Cancelled", "Redistribute"] },
+//         $or: [
+//           { claimedBy: { $exists: false } },
+//           { claimedBy: null },
+//           { claimedBy: "" },
+//         ],
+//       },
+//       {
+//         $set: {
+//           status: "Donated",
+//           claimedBy: userId,
+//           claimedByName: userName,
+//           claimedAt: new Date(),
+//         },
+//       },
+//       { new: true }
+//     );
+
+//     if (!updated) {
+//       // Either order not found, not in correct status, or already claimed
+//       return res.status(400).json({
+//         success: false,
+//         message:
+//           "Order not available to claim (already claimed/donated or not found)",
+//       });
+//     }
+
+//     return res.json({
+//       success: true,
+//       data: updated,
+//       message: "Order successfully claimed and marked as Donated",
+//     });
+//   } catch (err) {
+//     console.error("Error in claimCancelledOrder:", err);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Server error while claiming order",
+//     });
+//   }
+// };
 
 export {
   placeOrder,
@@ -967,6 +1179,7 @@ export {
   driverClaimOrder,
   driverMarkDelivered,
   userImpact,
-  getNearbyCancelledOrders,
-  claimCancelledOrder,
+  getUserAvailableOrders,
+  // getNearbyCancelledOrders,
+  // claimCancelledOrder,
 };

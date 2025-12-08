@@ -6,12 +6,6 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import axios from "axios";
 
-/**
- * PlaceOrder - Page component for placing food orders
- * Handles order form submission with COD or Stripe payment options
- * Validates user authentication and cart contents before allowing order placement
- * @returns {JSX.Element} Order placement form with delivery information and payment options
- */
 const PlaceOrder = () => {
   const [payment, setPayment] = useState("cod");
   const [data, setData] = useState({
@@ -26,6 +20,14 @@ const PlaceOrder = () => {
     phone: "",
   });
 
+  // ⭐ NEW: geocoded address + suggestions (like LoginPopup)
+  const [geoAddress, setGeoAddress] = useState({
+    formatted: "",
+    lat: "",
+    lng: "",
+  });
+  const [suggestions, setSuggestions] = useState([]);
+
   const {
     getTotalCartAmount,
     token,
@@ -39,39 +41,76 @@ const PlaceOrder = () => {
 
   const navigate = useNavigate();
 
-  /**
-   * Handles input field changes in the order form
-   * @param {Object} event - React change event
-   * @param {HTMLInputElement} event.target - The input element that changed
-   * @returns {void}
-   */
   const onChangeHandler = (event) => {
     const name = event.target.name;
     const value = event.target.value;
     setData((data) => ({ ...data, [name]: value }));
   };
 
-  /**
-   * Handles order form submission
-   * Processes order with either COD or Stripe payment based on selection
-   * @param {Object} e - React form submit event
-   * @returns {Promise<void>}
-   */
+  // ⭐ NEW: typed address → Nominatim suggestions
+  const handleGeoAddressChange = async (e) => {
+    const query = e.target.value;
+    setGeoAddress((prev) => ({ ...prev, formatted: query }));
+
+    if (query.length < 3) {
+      setSuggestions([]);
+      return;
+    }
+
+    try {
+      const res = await axios.get(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
+          query
+        )}&format=json&addressdetails=1&limit=5`
+      );
+      setSuggestions(res.data);
+    } catch (err) {
+      console.error("Error fetching address suggestions:", err);
+    }
+  };
+
+  // ⭐ NEW: user clicks a suggestion → we store lat/lng
+  const handleSelectSuggestion = (place) => {
+    setGeoAddress({
+      formatted: place.display_name,
+      lat: place.lat,
+      lng: place.lon,
+    });
+    setSuggestions([]);
+  };
+
   const placeOrder = async (e) => {
     e.preventDefault();
+
+    // optional safety: require a selected address with coords
+    if (!geoAddress.lat || !geoAddress.lng) {
+      toast.error("Please select a valid address from suggestions.");
+      return;
+    }
+
     let orderItems = [];
     food_list.map((item) => {
       if (cartItems[item._id] > 0) {
-        const { image, model3D, ...itemInfo } = item; // Destructure to exclude image
+        const { image, model3D, ...itemInfo } = item;
         itemInfo["quantity"] = cartItems[item._id];
         orderItems.push(itemInfo);
       }
     });
+
+    // ⭐ CHANGED: include formatted + lat/lng inside address
     let orderData = {
-      address: data,
+      address: {
+        ...data,
+        formatted: geoAddress.formatted,
+        lat: geoAddress.lat,
+        lng: geoAddress.lng,
+      },
       items: orderItems,
       amount: getTotalCartAmount() + deliveryCharge,
     };
+
+    console.log("DEBUG orderData being sent:", orderData);
+
     if (payment === "stripe") {
       let response = await axios.post(url + "/api/order/place", orderData, {
         headers: { token },
@@ -110,6 +149,7 @@ const PlaceOrder = () => {
     <form onSubmit={placeOrder} className="place-order">
       <div className="place-order-left">
         <p className="title">Delivery Information</p>
+
         <div className="multi-field">
           <input
             type="text"
@@ -128,6 +168,7 @@ const PlaceOrder = () => {
             required
           />
         </div>
+
         <input
           type="email"
           name="email"
@@ -136,6 +177,29 @@ const PlaceOrder = () => {
           placeholder="Email address"
           required
         />
+
+        {/* ⭐ NEW: search address with autocomplete */}
+        <div className="address-field">
+          <input
+            type="text"
+            placeholder="Search delivery address"
+            value={geoAddress.formatted}
+            onChange={handleGeoAddressChange}
+            autoComplete="off"
+            required
+          />
+          {suggestions.length > 0 && (
+            <ul className="address-suggestions">
+              {suggestions.map((s) => (
+                <li key={s.place_id} onClick={() => handleSelectSuggestion(s)}>
+                  {s.display_name}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {/* existing street/city/state fields for extra detail (kept) */}
         <input
           type="text"
           name="street"
@@ -189,6 +253,7 @@ const PlaceOrder = () => {
           required
         />
       </div>
+
       <div className="place-order-right">
         <div className="cart-total">
           <h2>Cart Totals</h2>

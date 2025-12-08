@@ -29,10 +29,13 @@
   text-transform: capitalize;
   transition: color 0.3s ease;
 }
-
-.navbar-menu .active {
-  padding-bottom: 2px;
-  border-bottom: 2px solid var(--brand);
+.navbar-menu .nav-link {
+  display: inline-block;
+  text-decoration: none;
+  color: var(--text);
+  text-transform: capitalize;
+  transition: color 0.3s ease;
+  white-space: nowrap;   /* <- this is the key */
 }
 
 /* -------- Right Section -------- */

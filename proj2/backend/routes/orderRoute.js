@@ -16,8 +16,9 @@ import {
   driverClaimOrder,
   driverMarkDelivered,
   userImpact,
-  getNearbyCancelledOrders, // new controller
-  claimCancelledOrder,      // new controller
+  getUserAvailableOrders,
+  // getNearbyCancelledOrders, // new controller
+  // claimCancelledOrder,      // new controller
 } from "../controllers/orderController.js";
 
 const orderRouter = express.Router();
@@ -41,14 +42,19 @@ orderRouter.get("/driver/available", authMiddleware, driverAvailableOrders);
 orderRouter.get("/driver/my", authMiddleware, driverMyOrders);
 orderRouter.post("/driver/claim", authMiddleware, driverClaimOrder);
 orderRouter.post("/driver/deliver", authMiddleware, driverMarkDelivered);
-
-// 🔹 NEW: user sees cancelled/redistribute orders nearby
-orderRouter.get("/user/nearby", authMiddleware, getNearbyCancelledOrders);
 orderRouter.post(
-  "/user/claim",
+  "/user/available",
   authMiddleware,
-  claimCancelledOrder
+  getUserAvailableOrders
 );
+
+// // 🔹 NEW: user sees cancelled/redistribute orders nearby
+// orderRouter.get("/user/nearby", authMiddleware, getNearbyCancelledOrders);
+// orderRouter.post(
+//   "/user/claim",
+//   authMiddleware,
+//   claimCancelledOrder
+// );
 
 // ESM export only
 export default orderRouter;

@@ -49,28 +49,42 @@ let claimedOrders = new Set();
 // ---------- HELPERS ----------
 
 // veg-only detection
+// veg-only detection
 function isVegOnlyOrder(orderItems = []) {
   if (!Array.isArray(orderItems) || orderItems.length === 0) return true;
 
   return orderItems.every((item) => {
     if (!item) return true;
 
+    // 1) explicit boolean flag wins if present
     if (typeof item.isVeg === "boolean") {
       return item.isVeg === true;
     }
 
-    const cat = (item.category || item.type || "").toString().toLowerCase();
+    // 2) category / type string
+    const rawCat = (item.category || item.type || "").toString();
+    const cat = rawCat.toLowerCase();
+    const catCompact = rawCat.replace(/\s+/g, "").toLowerCase(); // "Non Veg" -> "nonveg"
 
-    if (cat.includes("non-veg") || cat.includes("nonveg") || cat === "nv") {
+    // 🚫 clearly non-veg categories
+    if (
+      cat.includes("non veg") ||          // "Non Veg"
+      cat.includes("non-veg") ||          // "Non-Veg"
+      catCompact === "nonveg" ||          // "NonVeg"
+      catCompact.startsWith("nonveg") ||  // "NonVeg Starters"
+      cat === "nv"                        // short form
+    ) {
       return false;
     }
 
+    // otherwise assume veg by default
     return true;
   });
 }
 
+
 // sweet / dessert detection
-// ✅ treats anything in categories "Cake" / "Deserts" / "Desserts" as sweets
+// treats anything in categories "Cake" / "Deserts" / "Desserts" as sweets
 //   + name-based safety net for things like Gelato, Baklava, Tiramisu, etc.
 function orderHasSweets(orderItems = []) {
   if (!Array.isArray(orderItems) || orderItems.length === 0) return false;
@@ -106,6 +120,25 @@ function orderHasSweets(orderItems = []) {
   });
 }
 
+function distanceInKm(lat1, lon1, lat2, lon2) {
+  const toRad = (v) => (v * Math.PI) / 180;
+
+  const R = 6371; // Earth radius in km
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) *
+      Math.cos(toRad(lat2)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+
 // ---------- QUEUE PROCESSING ----------
 
 const processNotificationQueue = async () => {
@@ -114,6 +147,18 @@ const processNotificationQueue = async () => {
     currentNotificationIndex = 0;
 
     const notification = notificationQueue[0];
+
+    const orderLat = notification.addressLat
+      ? parseFloat(notification.addressLat)
+      : NaN;
+    const orderLng = notification.addressLng
+      ? parseFloat(notification.addressLng)
+      : NaN;
+
+    const USE_LOCATION =
+      !Number.isNaN(orderLat) && !Number.isNaN(orderLng);
+
+    const RADIUS_KM = 10;
 
     if (claimedOrders.has(notification.orderId)) {
       console.log(`Order ${notification.orderId} already claimed, skipping`);
@@ -164,12 +209,13 @@ const processNotificationQueue = async () => {
     }
 
     const uniqueIds = [...new Set(allConnectedUserIds)];
-    const users = await userModel
-      .find({ _id: { $in: uniqueIds } })
-      .select("_id dietPreference sugarPreference")
-      .lean();
 
-    const allowedUserIds = new Set(
+      const users = await userModel
+  .find({ _id: { $in: uniqueIds } })
+  .select("_id dietPreference sugarPreference address")
+  .lean();
+
+      const allowedUserIds = new Set(
       users
         .filter((u) => {
           const diet = (u.dietPreference || "any").toLowerCase();
@@ -189,6 +235,25 @@ const processNotificationQueue = async () => {
           // sugar rule
           if (hasSweets && sugarIsNoSweets) {
             return false;
+          }
+
+          // ⭐ NEW: distance rule (only if order has coords)
+          if (USE_LOCATION) {
+            const addr = u.address || {};
+            const uLat =
+              addr.lat !== undefined ? parseFloat(addr.lat) : NaN;
+            const uLng =
+              addr.lng !== undefined ? parseFloat(addr.lng) : NaN;
+
+            if (Number.isNaN(uLat) || Number.isNaN(uLng)) {
+              // no user coords -> skip them for location-based push
+              return false;
+            }
+
+            const distKm = distanceInKm(orderLat, orderLng, uLat, uLng);
+            if (distKm > RADIUS_KM) {
+              return false;
+            }
           }
 
           return true;

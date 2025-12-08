@@ -25,6 +25,7 @@ html, body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+
 * {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
@@ -48,9 +49,12 @@ a {
 }
 
 .app {
-  width: 80%;
-  margin: auto;
+  width: 100%;
+  max-width: 1380px;   /* optional: keeps things from getting too wide */
+  margin: 0 auto;
+  padding: 0 32px;      /* adjust this for how big you want the side gutters */
 }
+
 
 @keyframes fadeIn {
   0% {

@@ -18,6 +18,8 @@ import DriverOrders from "./pages/DriverOrders.jsx";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Profile from "./pages/Profile/Profile"; // ⭐ NEW
 import Impact from "./pages/Impact/Impact";
+import ClaimOrder from "./pages/ClaimOrder/ClaimOrder.jsx";
+
 
 const App = () => {
   const [showLogin, setShowLogin] = useState(false);
@@ -47,6 +49,7 @@ const App = () => {
               </ProtectedRoute>
             }
           />
+          <Route path="/claim-order" element={<ClaimOrder />} />
 
           <Route
             path="/driver/orders"

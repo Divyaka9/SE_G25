@@ -53,28 +53,35 @@ const Navbar = ({ setShowLogin }) => {
         <Link
           to="/"
           onClick={() => setMenu("home")}
-          className={menu === "home" ? "active" : ""}
+          className={`nav-link ${menu === "home" ? "active" : ""}`}
         >
           Home
         </Link>
         <a
           href="#explore-menu"
           onClick={() => setMenu("menu")}
-          className={menu === "menu" ? "active" : ""}
+          className={`nav-link ${menu === "home" ? "active" : ""}`}
         >
           Menu
         </a>
+        <Link
+          to="/claim-order"
+          onClick={() => setMenu("claim-order")}
+          className={`nav-link ${menu === "home" ? "active" : ""}`}
+        >
+          Claim Order
+        </Link>
         <a
           href="#app-download"
           onClick={() => setMenu("mob-app")}
-          className={menu === "mob-app" ? "active" : ""}
+          className={`nav-link ${menu === "home" ? "active" : ""}`}
         >
           Mobile App
         </a>
         <a
           href="#footer"
           onClick={() => setMenu("contact")}
-          className={menu === "contact" ? "active" : ""}
+          className={`nav-link ${menu === "home" ? "active" : ""}`}
         >
           Contact Us
         </a>
