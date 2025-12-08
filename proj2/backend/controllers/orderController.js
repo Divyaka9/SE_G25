@@ -809,7 +809,6 @@ const userImpact = async (req, res) => {
   }
 };
 
-
 // ---- Helpers copied from server.js so we can reuse the same rules ----
 
 // Check if an order is veg-only based on item flags / categories
@@ -843,7 +842,6 @@ function isVegOnlyOrder(orderItems = []) {
     return true;
   });
 }
-
 
 // Detect if an order has sweets / desserts
 function orderHasSweets(orderItems = []) {
@@ -933,13 +931,10 @@ const getUserAvailableOrders = async (req, res) => {
 
     // User location (from their saved address)
     const uAddr = user.address || {};
-    const userLat =
-      uAddr.lat !== undefined ? parseFloat(uAddr.lat) : NaN;
-    const userLng =
-      uAddr.lng !== undefined ? parseFloat(uAddr.lng) : NaN;
+    const userLat = uAddr.lat !== undefined ? parseFloat(uAddr.lat) : NaN;
+    const userLng = uAddr.lng !== undefined ? parseFloat(uAddr.lng) : NaN;
 
-    const USE_LOCATION =
-      !Number.isNaN(userLat) && !Number.isNaN(userLng);
+    const USE_LOCATION = !Number.isNaN(userLat) && !Number.isNaN(userLng);
 
     const RADIUS_KM = 10; // same idea as notifications
 
@@ -978,10 +973,8 @@ const getUserAvailableOrders = async (req, res) => {
       // distance rule: only if BOTH user + order have coords
       if (USE_LOCATION) {
         const addr = order.address || {};
-        const oLat =
-          addr.lat !== undefined ? parseFloat(addr.lat) : NaN;
-        const oLng =
-          addr.lng !== undefined ? parseFloat(addr.lng) : NaN;
+        const oLat = addr.lat !== undefined ? parseFloat(addr.lat) : NaN;
+        const oLng = addr.lng !== undefined ? parseFloat(addr.lng) : NaN;
 
         if (!Number.isNaN(oLat) && !Number.isNaN(oLng)) {
           const distKm = distanceInKm(userLat, userLng, oLat, oLng);
@@ -1006,7 +999,6 @@ const getUserAvailableOrders = async (req, res) => {
     });
   }
 };
-
 
 // /**
 //  * GET /api/order/user/nearby
@@ -1070,7 +1062,6 @@ const getUserAvailableOrders = async (req, res) => {
 
 //   return distKm <= radius;
 // });
-
 
 //     return res.json({
 //       success: true,

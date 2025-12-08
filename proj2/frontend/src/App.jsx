@@ -20,7 +20,6 @@ import Profile from "./pages/Profile/Profile"; // ⭐ NEW
 import Impact from "./pages/Impact/Impact";
 import ClaimOrder from "./pages/ClaimOrder/ClaimOrder.jsx";
 
-
 const App = () => {
   const [showLogin, setShowLogin] = useState(false);
 

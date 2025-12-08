@@ -68,11 +68,11 @@ function isVegOnlyOrder(orderItems = []) {
 
     // 🚫 clearly non-veg categories
     if (
-      cat.includes("non veg") ||          // "Non Veg"
-      cat.includes("non-veg") ||          // "Non-Veg"
-      catCompact === "nonveg" ||          // "NonVeg"
-      catCompact.startsWith("nonveg") ||  // "NonVeg Starters"
-      cat === "nv"                        // short form
+      cat.includes("non veg") || // "Non Veg"
+      cat.includes("non-veg") || // "Non-Veg"
+      catCompact === "nonveg" || // "NonVeg"
+      catCompact.startsWith("nonveg") || // "NonVeg Starters"
+      cat === "nv" // short form
     ) {
       return false;
     }
@@ -81,7 +81,6 @@ function isVegOnlyOrder(orderItems = []) {
     return true;
   });
 }
-
 
 // sweet / dessert detection
 // treats anything in categories "Cake" / "Deserts" / "Desserts" as sweets
@@ -138,7 +137,6 @@ function distanceInKm(lat1, lon1, lat2, lon2) {
   return R * c;
 }
 
-
 // ---------- QUEUE PROCESSING ----------
 
 const processNotificationQueue = async () => {
@@ -155,8 +153,7 @@ const processNotificationQueue = async () => {
       ? parseFloat(notification.addressLng)
       : NaN;
 
-    const USE_LOCATION =
-      !Number.isNaN(orderLat) && !Number.isNaN(orderLng);
+    const USE_LOCATION = !Number.isNaN(orderLat) && !Number.isNaN(orderLng);
 
     const RADIUS_KM = 10;
 
@@ -210,12 +207,12 @@ const processNotificationQueue = async () => {
 
     const uniqueIds = [...new Set(allConnectedUserIds)];
 
-      const users = await userModel
-  .find({ _id: { $in: uniqueIds } })
-  .select("_id dietPreference sugarPreference address")
-  .lean();
+    const users = await userModel
+      .find({ _id: { $in: uniqueIds } })
+      .select("_id dietPreference sugarPreference address")
+      .lean();
 
-      const allowedUserIds = new Set(
+    const allowedUserIds = new Set(
       users
         .filter((u) => {
           const diet = (u.dietPreference || "any").toLowerCase();
@@ -240,10 +237,8 @@ const processNotificationQueue = async () => {
           // ⭐ NEW: distance rule (only if order has coords)
           if (USE_LOCATION) {
             const addr = u.address || {};
-            const uLat =
-              addr.lat !== undefined ? parseFloat(addr.lat) : NaN;
-            const uLng =
-              addr.lng !== undefined ? parseFloat(addr.lng) : NaN;
+            const uLat = addr.lat !== undefined ? parseFloat(addr.lat) : NaN;
+            const uLng = addr.lng !== undefined ? parseFloat(addr.lng) : NaN;
 
             if (Number.isNaN(uLat) || Number.isNaN(uLng)) {
               // no user coords -> skip them for location-based push

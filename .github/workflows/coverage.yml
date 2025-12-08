@@ -38,9 +38,21 @@ jobs:
         run: |
           npm ci
           npm run test:coverage
-      
+
+      # Upload all coverage reports to Codecov
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: |
+            proj2/backend/coverage/lcov.info
+            proj2/frontend/coverage/lcov.info
+            proj2/admin/coverage/lcov.info
+          flags: backend,frontend,admin
+          fail_ci_if_error: true
+          
       - name: Upload Coverage Reports Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: coverage-reports
           path: |

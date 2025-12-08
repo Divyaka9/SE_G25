@@ -8,7 +8,7 @@ import {
   verifyOrder,
   placeOrderCod,
   cancelOrder,
-  claimOrder,           // existing
+  claimOrder, // existing
   assignShelter,
   rateOrder,
   driverAvailableOrders,
@@ -42,11 +42,7 @@ orderRouter.get("/driver/available", authMiddleware, driverAvailableOrders);
 orderRouter.get("/driver/my", authMiddleware, driverMyOrders);
 orderRouter.post("/driver/claim", authMiddleware, driverClaimOrder);
 orderRouter.post("/driver/deliver", authMiddleware, driverMarkDelivered);
-orderRouter.post(
-  "/user/available",
-  authMiddleware,
-  getUserAvailableOrders
-);
+orderRouter.post("/user/available", authMiddleware, getUserAvailableOrders);
 
 // // 🔹 NEW: user sees cancelled/redistribute orders nearby
 // orderRouter.get("/user/nearby", authMiddleware, getNearbyCancelledOrders);

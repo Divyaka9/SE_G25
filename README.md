@@ -1,181 +1,313 @@
-# ByteBite
+<p align="center">🍽️ <b>ByteBite — Smart Food Ordering & Food Redistribution System</b></p>
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17547308.svg)](https://doi.org/10.5281/zenodo.17547336)
+<p align="center">
 
-# ByteBite
+  <!-- DOI -->
+  <a href="https://doi.org/10.5281/zenodo.17547336">
+    <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.17547308.svg" />
+  </a>
 
-## Quality Assurance Badges
+  <!-- Code Coverage -->
+  <a href="https://codecov.io/gh/Divyaka9/SE_G25">
+    <img src="https://codecov.io/gh/Divyaka9/SE_G25/branch/main/graph/badge.svg" />
+  </a>
 
-### Code Coverage
-[![codecov](https://codecov.io/gh/shreyas457/SE_G25/branch/main/graph/badge.svg?token=ENTA0IQ3HM)](https://codecov.io/gh/shreyas457/SE_G25)
+  <!-- ESLint Style Checker -->
+  <a href="https://github.com/shreyas457/SE_G25/actions/workflows/lint.yml">
+    <img src="https://github.com/shreyas457/SE_G25/actions/workflows/lint.yml/badge.svg?branch=feat/env-config" />
+  </a>
 
-### Style Checker (ESLint)
-[![ESLint Style Checker](https://github.com/shreyas457/SE_G25/actions/workflows/lint.yml/badge.svg?branch=feat/env-config)](https://github.com/shreyas457/SE_G25/actions/workflows/lint.yml)
+  <!-- ESLint Syntax Checker -->
+  <a href="https://github.com/shreyas457/SE_G25/actions/workflows/lint.yml">
+    <img src="https://github.com/shreyas457/SE_G25/actions/workflows/lint.yml/badge.svg?branch=feat/env-config" />
+  </a>
 
-### Syntax Checker (ESLint)
-[![ESLint Syntax Checker](https://github.com/shreyas457/SE_G25/actions/workflows/lint.yml/badge.svg?branch=feat/env-config)](https://github.com/shreyas457/SE_G25/actions/workflows/lint.yml)
+  <!-- Prettier Formatter -->
+  <a href="https://github.com/shreyas457/SE_G25/actions/workflows/format.yml">
+    <img src="https://github.com/shreyas457/SE_G25/actions/workflows/format.yml/badge.svg?branch=feat/env-config" />
+  </a>
 
-### Code Formatter (Prettier)
-[![Code Formatter (Prettier)](https://github.com/shreyas457/SE_G25/actions/workflows/format.yml/badge.svg?branch=feat/env-config)](https://github.com/shreyas457/SE_G25/actions/workflows/format.yml)
+  <!-- License -->
+  <a href="#">
+    <img src="https://img.shields.io/badge/License-MIT-green" />
+  </a>
 
-Demo video available on Google Drive:  
-[Click here to access](https://drive.google.com/drive/folders/1cu_q0Fzv2eirk6KWtg8ypfO_mJUwBUOG)
+</p>
 
-ByteBite is a single-restaurant food-ordering and food-redistribution system built by **NCSU Team G25**.
 
-The project has three main capabilities:
-
-1. Customers place orders from a single restaurant, track status, and pay online or via cash-on-delivery.
-2. When a customer cancels an order, the restaurant can either:
-   - expose the order to other customers so they can claim it, or  
-   - redirect the order to a partner shelter as a donation.
-3. Customers can view selected menu items using a 3D model carousel to obtain a richer view of each dish.
-
-The goal is to reduce food waste while maintaining a standard online ordering experience.
-
----
-
-## System Overview
-
-The system consists of three applications:
-
-- `backend/`  
-  Node.js + Express + MongoDB API exposing authentication, menu, cart, order, shelter, and reroute (donation history) endpoints.
-
-- `frontend/`  
-  React + Vite customer-facing web application for browsing the menu, placing orders, claiming redistributed orders, and viewing 3D models of dishes (via `three`, `@react-three/fiber`, and `@react-three/drei`).
-
-- `admin/`  
-  React + Vite restaurant admin dashboard for managing menu items, monitoring orders, updating statuses, and assigning cancelled orders to partner shelters.
-
-The backend exposes REST endpoints under `/api/*` and uses JSON Web Tokens (JWT) for authenticated operations.
+<p align="center">
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nodejs/nodejs-original.svg" width="45"/>
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/express/express-original.svg" width="45"/>
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/react/react-original.svg" width="45"/>
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/javascript/javascript-original.svg" width="45"/>
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/mongodb/mongodb-original.svg" width="45"/>
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/docker/docker-original.svg" width="45"/>
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/github/github-original.svg" width="45"/>
+</p>
 
 ---
 
-## Core Functionalities
+## 🧩 Overview
 
-### 1. Customer Ordering
+**ByteBite** is an intelligent food ordering, redistribution, and donation platform built with a full MERN stack and multiple dashboards for customers, restaurant admins, and shelters.
 
-- Customers register and log in.
-- Customers browse the menu, add items to their cart, and place orders.
-- Orders are stored in MongoDB with a finite-state status model:
-  - `Food Processing`
-  - `Out for delivery`
-  - `Delivered`
-  - `Redistribute`
-  - `Cancelled`
-  - `Claimed`
-- Payment can be completed either by:
-  - Stripe-based flow (`/api/order/place` + `/api/order/verify`), or
-  - Cash-on-delivery (`/api/order/placecod`).
+The system seamlessly integrates:
 
-### 2. Cancellation and Redistribution Queue
+✔ Customer Ordering System (Food App)  
+✔ Veg / Non-Veg Preference Filtering
+✔ Restaurant Admin Dashboard  
+✔ Driver Dashboard for Order Deliveries 
+✔ Shelter Dashboard for Donations  
+✔ Real-time Redistribution Queue  
+✔ 3D Menu Item Visualization  
+✔ Automated CI • Testing • Code Quality Tools  
 
-When a customer cancels an order:
-
-- The backend validates that the cancelling user is either the original owner or (if already claimed) the current owner.
-- If the status allows cancellation (for example, `Food Processing` or `Out for delivery`), the status is set to `Redistribute`.
-- A queue notification is emitted via Socket.IO so that interested clients can display the cancelled order to other customers.
-
-### 3. Claiming a Cancelled Order (Customer-to-Customer)
-
-- Redistributable orders (status `Redistribute`) can be claimed by other authenticated customers via the `/api/order/claim` endpoint.
-- When a claim succeeds:
-  - Ownership of the order is transferred to the claimant.
-  - The order status is set back to `Food Processing`.
-  - The order now appears in the claimant’s order history.
-- Shelters do not claim orders directly from the queue. Only customers claim orders. Restaurant staff remain responsible for reassigning orders to shelters.
-
-### 4. Restaurant-to-Shelter Donation
-
-The restaurant can donate cancelled or redistributable orders to shelters:
-
-- Partner shelters are stored in the `shelter` collection and may be seeded via `/api/shelters/seed`.
-- Active shelters can be listed via `/api/shelters/list`.
-- Restaurant staff use the admin dashboard to assign an order to a shelter, which calls `/api/order/assign-shelter` on the backend.
-- `assign-shelter`:
-  - Validates the order and shelter.
-  - Ensures the order is in a suitable state (`Redistribute` or `Cancelled`).
-  - Attaches shelter metadata to the order.
-  - Records a donation entry in the `reroutes` collection.
-- Donation history is available via `/api/reroutes`, which supports pagination and is designed to back the shelter-history view in the admin interface.
-
-Shelters are passive recipients in this model: they do not directly interact with the API to “claim” food. The restaurant manages all redirection.
-
-### 5. 3D Menu Visualization
-
-The customer-facing frontend supports rendering of 3D models associated with menu items:
-
-- When the restaurant uploads a dish, it may attach:
-  - A standard 2D image, and
-  - An optional 3D model asset.
-- The frontend uses `three`, `@react-three/fiber`, and `@react-three/drei` to render a 3D carousel of dishes.
-- This allows customers to inspect certain items in a more realistic and interactive way.
+ByteBite reduces food waste by enabling unused/cancelled meals to be claimed or donated efficiently.
 
 ---
 
-## Updates & Announcements
+## 🍽️ Core Functionalities
 
-We post short updates whenever we ship features or milestones.
-
-- Full changelog: see **[docs/updates.md](docs/updates.md)**
-- Latest highlights:
-   — Claim Order feature: cancelled → Redistribute → Claimed, with real-time pop-ups.
-## Project Stats
-
-- **Partner Shelters/NGOs:** 10 (registered for end-of-day surplus donations)
-- **Redistributed Meals:** 15+ (successfully reassigned through the Claim Order module)
-- **Active Contributors:** 4(core developers from Team 25 – SE Project Group)
-- **Intelligent Modules:** 4 (Cancel-to-Redistribute, Shelter Pipeline, and Real-time Claim Notifications, 3D Visualization)
-
-> *ByteBite transforms canceled and surplus orders into redistributable meals — connecting restaurants, users, and shelters in real time to reduce food waste and support the community.*
- 
-## Partners & Collaborators
-
-| Partner / Role | Contribution |
-|----------------|---------------|
-| **Team 25 – ByteBite (NCSU SE Project Fall 2025)** | Core development team responsible for full-stack architecture, backend API, and workflow flow |
-| **NCSU Department of Computer Science** | Provided project framework, evaluation, and academic guidance |
-| **OpenAI (ChatGPT) & Anthropic (Claude)** | Assisted in idea exploration, UI refinement, and code documentation |
+### **1️⃣ Customer Ordering (Food App)**  
+- User registration and login  
+- Browse menu with Veg / Non-Veg preferences and add items to cart  
+- Place orders via:  
+  - Stripe integration  
+  - Cash-on-delivery  
+- Track real-time order statuses:  
+  `Food Processing → Out for Delivery → Delivered → Redistribute → Claimed → Cancelled`
 
 ---
-## Repository Structure
 
-```text
-backend/
-  config/db.js
-  controllers/
-    cartController.js
-    foodController.js
-    orderController.js
-    rerouteController.js
-    shelterController.js
-    userController.js
-  middleware/
-    auth.js
-  models/
-    foodModel.js
-    orderModel.js
-    rerouteModel.js
-    shelterModel.js
-    userModel.js
-  routes/
-    cartRoute.js
-    foodRoute.js
-    orderRoute.js
-    rerouteRoute.js
-    shelterRoute.js
-    userRoute.js
-  server.js
-  package.json
+### **2️⃣ Cancellation → Redistribution Queue**
+When a user cancels an order:
+- It enters **Redistribute** state  
+- Other customers receive **real-time notifications**  
+- They can **claim** the order  
+- Ownership is reassigned to the new claimant  
+- Order returns to "Food Processing" under the new owner  
 
-frontend/
-  src/...
-  package.json
+This ensures food does not go to waste.
 
-admin/
-  src/...
-  package.json
+---
 
+### **3️⃣ Restaurant → Shelter Donation**
+Restaurants can donate food to partner shelters:
+- Validate order eligibility  
+- Assign to a shelter  
+- Record donation in `reroutes` collection  
+- Shelters receive the donation and update status  
+- Donation history is viewable for audits  
 
+---
 
+### **4️⃣ Driver Dashboard (Delivery Workforce)**
+The Driver Dashboard enables smooth order delivery management:
+- Drivers authenticate with secure login  
+- View all assigned deliveries  
+- Update delivery stage:
+  - **Delivered**  
+- Real-time sync with customer order tracking  
+- Reduce manual admin workload by automating delivery updates  
+
+---
+
+### **4️⃣ 3D Menu Visualization**
+Optional 3D models per dish using:  
+- **Three.js**  
+- **@react-three/fiber**  
+- **@react-three/drei**  
+
+Enhances the customer's browsing experience.
+
+---
+
+## ⚙️ Development Tools & Automation
+
+### 🧪 Testing
+- **Jest** — backend unit & integration tests  
+- **Vitest** — frontend & dashboard testing  
+- Automated coverage exporting  
+
+### 🔍 Style & Syntax
+- **ESLint**  
+- **Prettier**  
+- `.prettierignore`, `.eslintrc` per app  
+
+### 🚀 Continuous Integration (GitHub Actions)
+Runs automatically on each push:
+- Lint  
+- Tests  
+- Build artifacts for:
+  - Food App  
+  - Admin Dashboard  
+  - Shelter Dashboard  
+
+---
+
+## 🏗 Repository Structure
+
+```
+proj2/
+│
+├── backend/                # Express.js API
+│   ├── config/
+│   ├── controllers/
+│   ├── middleware/
+│   ├── models/
+│   ├── routes/
+│   ├── socket/
+│   ├── test/
+│   ├── utils/
+│   ├── server.js
+│   └── package.json
+│
+├── food-app/               # Customer-facing React app
+│   ├── public/
+│   ├── src/
+│   │   ├── assets/
+│   │   ├── components/
+│   │   ├── context/
+│   │   ├── hooks/
+│   │   ├── pages/
+│   │   ├── styles/
+│   │   └── utils/
+│   ├── vite.config.js
+│   └── package.json
+│
+├── admin-dashboard/        # Restaurant admin app
+│   ├── public/
+│   ├── src/
+│   │   ├── components/
+│   │   ├── context/
+│   │   ├── hooks/
+│   │   ├── pages/
+│   │   ├── styles/
+│   │   └── utils/
+│   ├── vite.config.js
+│   └── package.json
+│
+├── shelter-dashboard/      # Shelter donation management app
+│   ├── public/
+│   ├── src/
+│   │   ├── components/
+│   │   ├── context/
+│   │   ├── pages/
+│   │   └── styles.css
+│   ├── vite.config.js
+│   └── package.json
+│
+├── scripts/
+│   └── generate-docs.js
+│
+├── tests/
+├── API.md
+├── GETTING_STARTED.md
+├── ENV_TEMPLATE.md
+├── CODE_OF_CONDUCT.md
+├── CONTRIBUTING.md
+├── CHANGLOG.md
+├── LICENSE
+├── README.md
+└── package.json
+```
+
+---
+
+## 🎥 Demo 
+
+[![Watch the demo](https://img.youtube.com/vi/1IyLCHuaQmE/hqdefault.jpg)](https://youtu.be/1IyLCHuaQmE)
+
+---
+
+## 👥 Contributors
+
+We separate previous contributors from new contributors.
+
+### 🧓 Previous Contributors (Original ByteBite Team)
+
+| Name | Unity ID |
+|------|--------|
+| Smruthi Bangalore Thandava Murthy | sbangal6 |
+| Vineeta Vishwas Bhujle | vbhujle |
+| Swasti Sadanand | ssadana |
+| Shreyas Raviprasad | sravipr |
+
+---
+
+### 🆕 New Contributors (Our Team)
+
+| Name | Unity ID |
+|------|--------|
+| Soham Sarang Deshpande | sdeshpa5 |
+| Divya Kannan | dkannan2 |
+| Tejas Pavular Ramesh | tpavula |
+| Mahek Kantharia | mrkantha |
+
+---
+
+## 🛠 Work Completed by Our Team
+
+1. **Driver Dashboard** - Built a Driver Dashboard that lets drivers view “Ready for Pickup” orders, manage accepted and out-for-delivery orders, and seamlessly mark deliveries as completed.
+2. **Shelter Dashboard** - Built a Shelter Dashboard that allows shelters to accept or decline donation requests and view their donation history, including all past fulfilled orders.
+3. **Preference Filters** -  Lets customers tag preferences (Veg / No Sugar) so notifications stay meaningful and targeted.
+4. **Enhanced UI experienced** - Implemented dynamic menu-item filtering and optimizing dashboard layout and responsiveness.
+
+---
+
+## 🚧 Future Enhancements
+
+- Real-time driver tracking  
+- Unified login system (SSO across dashboards)  
+- AI-based redistribution recommendations  
+- Admin analytics dashboard  
+- Mobile PWA support  
+- Automated donation batching  
+
+---
+
+## 📦 Running Production Builds
+
+### 1️⃣ Start Backend
+```bash
+cd backend
+npm install
+npm run server
+```
+
+### 2️⃣ Start Food App Build
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+### 3️⃣ Start Admin Dashboard Build
+```bash
+cd admin
+npm install
+npm run dev
+```
+
+### 4️⃣ Start Shelter Dashboard Build
+```bash
+cd shelter-dashboard
+npm install
+npm run dev
+```
+
+---
+
+## 📜 License
+
+This project is licensed under the MIT License.
+
+---
+
+## 💬 Feedback
+
+We welcome feature requests, bug reports, and contributions.
+
+---
+
+<p align="center"><i>🥡 "Reduce waste. Redistribute smartly. Feed communities — one byte at a time."</i></p>

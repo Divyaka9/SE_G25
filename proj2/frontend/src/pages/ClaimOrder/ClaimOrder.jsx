@@ -29,7 +29,7 @@ const ClaimOrder = () => {
 
       const res = await axios.post(
         `${url}/api/order/user/available`,
-        {},         // <-- body is empty, userId comes from token
+        {}, // <-- body is empty, userId comes from token
         authHeader
       );
 
@@ -75,8 +75,7 @@ const ClaimOrder = () => {
   const renderOrderList = () => {
     if (error) return <p style={{ color: "red" }}>{error}</p>;
     if (loadingOrders) return <p>Loading available orders…</p>;
-    if (orders.length === 0)
-      return <p>No available orders right now.</p>;
+    if (orders.length === 0) return <p>No available orders right now.</p>;
 
     return (
       <ul className="driver-order-list">
